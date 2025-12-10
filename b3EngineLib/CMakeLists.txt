@@ -63,7 +63,7 @@ set(SDL_STATIC ON)
 FetchContent_Declare(
   sdl
   GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-  GIT_TAG release-3.2.26)
+  GIT_TAG release-3.2.28)
 FetchContent_MakeAvailable(sdl)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${sdl_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
@@ -90,7 +90,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 FetchContent_Declare(
   vk_bootstrap
   GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-  GIT_TAG v1.4.328 
+  GIT_TAG v1.4.335 
 )
 FetchContent_MakeAvailable(vk_bootstrap)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${vk_bootstrap_SOURCE_DIR}/src)
@@ -110,7 +110,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC VulkanMemoryAllocator)
 FetchContent_Declare(
   volk
   GIT_REPOSITORY https://github.com/zeux/volk.git
-  GIT_TAG vulkan-sdk-1.4.328.1 
+  GIT_TAG vulkan-sdk-1.4.335.0 
 )
 FetchContent_MakeAvailable(volk)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${volk_SOURCE_DIR})

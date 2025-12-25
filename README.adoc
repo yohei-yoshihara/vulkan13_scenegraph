@@ -1,0 +1,26 @@
+﻿= Vulkan1.3 + Dynamic Rendering
+
+Simple scene graph rendering engine.
+This engine is based on Khronos' sample code Triangle 1.3.
+
+image:https://github.com/yohei-yoshihara/vulkan13_scenegraph/blob/main/screenshots/screenshot1.png[]
+
+== TODO
+
+* [*] MSAA
+* [*] Shadow Mapping
+* [*] Keyboard/Mouse
+* [*] PCF
+* [*] Frustum Culling
+* [*] Texture Mapping (Descriptor Indexing)
+* [ ] Load Model Data
+* [ ] Font Rendering
+* [ ] GUI
+ 
+== References
+
+* https://vulkan-tutorial.com/[Vulkan Tutorial]
+* https://github.com/KhronosGroup/Vulkan-Samples[Khronos Vulkan Samples]
+* https://github.com/SaschaWillems/Vulkan[Sascha Willems Vulkan Samples]
+* https://github.com/stuartcaunt/isgl3d[isgl3d (Mesh Generation)]
+

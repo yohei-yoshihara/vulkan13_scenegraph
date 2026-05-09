@@ -1,16 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.31)
-
-# If you want to place the dependent libraries other than under the `build` folder, comment out the following:
-# if(WIN32)
-#     file(TO_CMAKE_PATH "$ENV{USERPROFILE}" USER_HOME_DIRECTORY)
-# else()
-#     set(USER_HOME_DIRECTORY $ENV{HOME})
-# endif()
-# set(FETCHCONTENT_BASE_DIR "${USER_HOME_DIRECTORY}/.cache/FetchContent")
+﻿cmake_minimum_required(VERSION 4.1)
 include(FetchContent)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 project(b3Engine)
 
 add_library(${PROJECT_NAME}
@@ -32,6 +24,7 @@ add_library(${PROJECT_NAME}
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC $<$<CONFIG:Debug>:DEBUG>)
 if (MSVC)
+    target_compile_options(${PROJECT_NAME} PUBLIC /utf-8)
     target_compile_options(${PROJECT_NAME} PUBLIC /W4)
 else()
     target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-nullability-extension)
@@ -43,18 +36,20 @@ find_package(Vulkan REQUIRED COMPONENTS glslc)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR})
 # target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
 
-# SDL
-set(SDL_TESTS OFF)
-set(SDL_TEST_LIBRARY OFF)
-set(SDL_SHARED OFF)
-set(SDL_STATIC ON)
+# glfw
+if(APPLE)
+  enable_language(OBJC)
+endif(APPLE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
-  sdl
-  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-  GIT_TAG release-3.2.28)
-FetchContent_MakeAvailable(sdl)
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${sdl_SOURCE_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
+  glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw.git
+  GIT_TAG 3.4)
+FetchContent_MakeAvailable(glfw)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${glfw_SOURCE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 # spdlog
 FetchContent_Declare(
@@ -140,6 +135,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${imgui_SOURCE_DIR})
+
+# miniaudio
+FetchContent_Declare(
+  miniaudio
+  GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+  GIT_TAG 0.11.24)
+FetchContent_MakeAvailable(miniaudio)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${miniaudio_SOURCE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC miniaudio)
 
 # shaders
 

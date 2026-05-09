@@ -5,8 +5,8 @@
 
 #include <VkBootstrap.h>
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_vulkan.h>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 #include "b3/camera.hpp"
 #include "b3/types.hpp"
@@ -107,7 +107,7 @@ class Engine {
   struct Context {
     // Base resources
     vkb::Instance instance;
-    SDL_Window *window = nullptr;
+    GLFWwindow *window = nullptr;
     vkb::PhysicalDevice physicalDevice;
     vkb::Device device;
     VkQueue queue = VK_NULL_HANDLE;
@@ -258,24 +258,18 @@ public:
   VkResult presentImage(uint32_t index);
 
   // Utility Methos
-  void transitionImageLayout(VkCommandBuffer cmd, VkImage image,
-                             VkImageLayout oldLayout, VkImageLayout newLayout,
-                             VkAccessFlags2 srcAccessMask,
-                             VkAccessFlags2 dstAccessMask,
-                             VkPipelineStageFlags2 srcStage,
+  void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                             VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask, VkPipelineStageFlags2 srcStage,
                              VkPipelineStageFlags2 dstStage);
 
-  void transitionImageLayout(VkImage image, VkFormat format,
-                             VkImageLayout oldLayout, VkImageLayout newLayout);
+  void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-  VkSurfaceFormatKHR
-  selectSurfaceFormat(VkPhysicalDevice gpu, VkSurfaceKHR surface,
-                      std::vector<VkFormat> const &preferred_formats = {
-                          VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_B8G8R8A8_SRGB,
-                          VK_FORMAT_A8B8G8R8_SRGB_PACK32});
+  VkSurfaceFormatKHR selectSurfaceFormat(VkPhysicalDevice gpu, VkSurfaceKHR surface,
+                                         std::vector<VkFormat> const &preferred_formats = {
+                                           VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_B8G8R8A8_SRGB,
+                                           VK_FORMAT_A8B8G8R8_SRGB_PACK32});
 
-  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
-                               VkImageTiling tiling,
+  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
                                VkFormatFeatureFlags features);
   VkFormat findDepthFormat();
 
@@ -286,25 +280,20 @@ public:
   void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
   // バッファの作成
-  AllocatedBuffer createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                               VmaMemoryUsage memoryUsage);
+  AllocatedBuffer createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
   // バッファーのコピー
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
   // バッファの作成と初期データの設定
-  AllocatedBuffer uploadBuffer(const void *data, VkDeviceSize size,
-                               VkBufferUsageFlags usage = 0);
+  AllocatedBuffer uploadBuffer(const void *data, VkDeviceSize size, VkBufferUsageFlags usage = 0);
 
   // イメージの作成
-  AllocatedImage
-  createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
-              VkSampleCountFlagBits numSamples, VkFormat format,
-              VkImageTiling tiling, VkImageUsageFlags usage,
-              VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO);
+  AllocatedImage createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
+                             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                             VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_AUTO);
   // バッファのイメージへのコピー
-  void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                         uint32_t height);
+  void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
   // MSAAの最大サンプル数の取得
   VkSampleCountFlagBits getMaxUsableSampleCount();
@@ -322,9 +311,7 @@ public:
     m_windowHeight = height;
   }
 
-  void setCameraPosition(const glm::vec3 &eye, const glm::vec3 &center) {
-    m_camera = Camera::lookAt(eye, center);
-  }
+  void setCameraPosition(const glm::vec3 &eye, const glm::vec3 &center) { m_camera = Camera::lookAt(eye, center); }
 
   void setLightPos(const glm::vec4 &lightPos) { m_lightPos = lightPos; }
 

@@ -436,11 +436,13 @@ void Engine::bindSceneDescriptorSet() {
       },
     };
 
-    std::vector<VkDescriptorImageInfo> shadowMapImageInfos = {{
-      .sampler = m_context.shadowSampler,     // VkSampler
-      .imageView = m_context.shadowImageView, // VkImageView
-      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    }};
+    std::vector<VkDescriptorImageInfo> shadowMapImageInfos = {
+      {
+        .sampler = m_context.shadowSampler,     // VkSampler
+        .imageView = m_context.shadowImageView, // VkImageView
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      },
+    };
 
     std::vector<VkDescriptorBufferInfo> fsBufferInfos = {
       {
@@ -829,7 +831,6 @@ void Engine::updateUBO(PerFrame &per_frame) {
     0.1f,                                                                                     // near
     10.0f                                                                                     // far
   );
-  shadowProj[1][1] *= -1;
   auto shadowVP = shadowProj * shadowView;
 
   // ***** シーン *****
@@ -841,10 +842,6 @@ void Engine::updateUBO(PerFrame &per_frame) {
     0.1f,                                                                                     // near
     10.0f                                                                                     // far
   );
-  // Vulkan は NDC（正規化デバイス座標）の Y が上下反転しているため、
-  // GLM のプロジェクション行列をそのまま使うと上下が逆さまになる。
-  // proj[1][1] *= -1; により Y 軸を反転し、Vulkan 仕様に合わせている。
-  proj[1][1] *= -1;
   auto sceneVP = proj * view;
   sceneUBOVS.view = view;
   sceneUBOVS.proj = proj;
@@ -891,17 +888,22 @@ void Engine::initPerFrame(PerFrame &per_frame) {
   VkFenceCreateInfo info{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
   VK_CHECK(vkCreateFence(m_context.device, &info, nullptr, &per_frame.queue_submit_fence));
 
-  VkCommandPoolCreateInfo cmd_pool_info{.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-                                        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-                                        .queueFamilyIndex = static_cast<uint32_t>(m_context.graphicsQueueIndex)};
+  VkCommandPoolCreateInfo cmd_pool_info{
+    .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+    .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+    .queueFamilyIndex = static_cast<uint32_t>(m_context.graphicsQueueIndex),
+  };
   VK_CHECK(vkCreateCommandPool(m_context.device, &cmd_pool_info, nullptr, &per_frame.primary_command_pool));
 
-  VkCommandBufferAllocateInfo cmd_buf_info{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                                           .commandPool = per_frame.primary_command_pool,
-                                           .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                                           .commandBufferCount = 1};
+  VkCommandBufferAllocateInfo cmd_buf_info{
+    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+    .commandPool = per_frame.primary_command_pool,
+    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    .commandBufferCount = 1,
+  };
   VK_CHECK(vkAllocateCommandBuffers(m_context.device, &cmd_buf_info, &per_frame.primary_command_buffer));
-  SPDLOG_DEBUG("init_per_frame: primary_command_buffer = {:x}", reinterpret_cast<uint64_t>(per_frame.primary_command_buffer));
+  SPDLOG_DEBUG("init_per_frame: primary_command_buffer = {:x}",
+               reinterpret_cast<uint64_t>(per_frame.primary_command_buffer));
 }
 
 void Engine::teardownPerFrame(PerFrame &per_frame) {
@@ -1001,9 +1003,11 @@ static std::vector<char> readFile(const std::string &filename) {
 
 VkShaderModule Engine::loadShaderModule(const char *path) {
   std::vector<char> spirv = readFile(path);
-  VkShaderModuleCreateInfo module_info{.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                                       .codeSize = spirv.size(),
-                                       .pCode = reinterpret_cast<const uint32_t *>(spirv.data())};
+  VkShaderModuleCreateInfo module_info{
+    .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+    .codeSize = spirv.size(),
+    .pCode = reinterpret_cast<const uint32_t *>(spirv.data()),
+  };
 
   VkShaderModule shader_module;
   VK_CHECK(vkCreateShaderModule(m_context.device, &module_info, nullptr, &shader_module));
@@ -1017,41 +1021,64 @@ void Engine::initPipeline() {
     m_context.modelDescriptorSetLayout,
     m_context.textureDescriptorSetLayout,
   };
-  VkPipelineLayoutCreateInfo layout_info{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                                         .setLayoutCount = static_cast<uint32_t>(layouts.size()),
-                                         .pSetLayouts = layouts.data()};
+  VkPipelineLayoutCreateInfo layout_info{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+    .setLayoutCount = static_cast<uint32_t>(layouts.size()),
+    .pSetLayouts = layouts.data(),
+  };
   VK_CHECK(vkCreatePipelineLayout(m_context.device, &layout_info, nullptr, &m_context.pipelineLayout));
 
   VkVertexInputBindingDescription binding_description{
-    .binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+    .binding = 0,
+    .stride = sizeof(Vertex),
+    .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+  };
 
-  std::vector<VkVertexInputAttributeDescription> attribute_descriptions = {{
-    {.location = 0,
-     .binding = 0,
-     .format = VK_FORMAT_R32G32B32_SFLOAT,
-     .offset = offsetof(Vertex, position)},                                                                  // position
-    {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)}, // normal
-    {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, texCoord)},  // texCoord
-  }};
+  std::vector<VkVertexInputAttributeDescription> attribute_descriptions = {
+    {
+      {
+        .location = 0,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = offsetof(Vertex, position),
+      },
+      {
+        .location = 1,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = offsetof(Vertex, normal),
+      },
+      {
+        .location = 2,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Vertex, texCoord),
+      },
+    },
+  };
 
-  VkPipelineVertexInputStateCreateInfo vertex_input{.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-                                                    .vertexBindingDescriptionCount = 1,
-                                                    .pVertexBindingDescriptions = &binding_description,
-                                                    .vertexAttributeDescriptionCount =
-                                                      static_cast<uint32_t>(attribute_descriptions.size()),
-                                                    .pVertexAttributeDescriptions = attribute_descriptions.data()};
+  VkPipelineVertexInputStateCreateInfo vertex_input{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+    .vertexBindingDescriptionCount = 1,
+    .pVertexBindingDescriptions = &binding_description,
+    .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
+    .pVertexAttributeDescriptions = attribute_descriptions.data(),
+  };
 
-  VkPipelineInputAssemblyStateCreateInfo input_assembly{.sType =
-                                                          VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-                                                        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                                                        .primitiveRestartEnable = VK_FALSE};
+  VkPipelineInputAssemblyStateCreateInfo input_assembly{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    .primitiveRestartEnable = VK_FALSE,
+  };
 
-  VkPipelineRasterizationStateCreateInfo raster{.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-                                                .depthClampEnable = VK_FALSE,
-                                                .rasterizerDiscardEnable = VK_FALSE,
-                                                .polygonMode = VK_POLYGON_MODE_FILL,
-                                                .depthBiasEnable = VK_FALSE,
-                                                .lineWidth = 1.0f};
+  VkPipelineRasterizationStateCreateInfo raster{
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+    .depthClampEnable = VK_FALSE,
+    .rasterizerDiscardEnable = VK_FALSE,
+    .polygonMode = VK_POLYGON_MODE_FILL,
+    .depthBiasEnable = VK_FALSE,
+    .lineWidth = 1.0f,
+  };
 
   std::vector<VkDynamicState> dynamic_states = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
                                                 VK_DYNAMIC_STATE_CULL_MODE, VK_DYNAMIC_STATE_FRONT_FACE,
@@ -1091,7 +1118,7 @@ void Engine::initPipeline() {
     .pDynamicStates = dynamic_states.data(),
   };
 
-  std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
+  std::vector<VkPipelineShaderStageCreateInfo> shader_stages{
     {
       {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -1149,12 +1176,16 @@ void Engine::initShadowPipeline() {
   VkVertexInputBindingDescription binding_description{
     .binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
 
-  std::vector<VkVertexInputAttributeDescription> attribute_descriptions = {{
-    {.location = 0,
-     .binding = 0,
-     .format = VK_FORMAT_R32G32B32_SFLOAT,
-     .offset = offsetof(Vertex, position)}, // position
-  }};
+  std::vector<VkVertexInputAttributeDescription> attribute_descriptions = {
+    {
+      {
+        .location = 0,
+        .binding = 0,
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = offsetof(Vertex, position),
+      },
+    },
+  };
 
   VkPipelineVertexInputStateCreateInfo vertex_input{
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -1326,7 +1357,15 @@ void Engine::renderShadow(uint32_t swapchain_index, VkCommandBuffer cmd) {
 
   VkRenderingInfo rendering_info{
     .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-    .renderArea = {.offset = {0, 0}, .extent = {.width = SHADOWMAP_SIZE, .height = SHADOWMAP_SIZE}},
+    .renderArea =
+      {
+        .offset = {0, 0},
+        .extent =
+          {
+            .width = SHADOWMAP_SIZE,
+            .height = SHADOWMAP_SIZE,
+          },
+      },
     .layerCount = 1,
     .colorAttachmentCount = 0,
     .pColorAttachments = nullptr,
@@ -1337,11 +1376,24 @@ void Engine::renderShadow(uint32_t swapchain_index, VkCommandBuffer cmd) {
 
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_context.shadowPipeline);
 
-  VkViewport vp{.width = Engine::SHADOWMAP_SIZE, .height = Engine::SHADOWMAP_SIZE, .minDepth = 0.0f, .maxDepth = 1.0f};
+  VkViewport vp{
+    .x = 0.f,
+    .y = Engine::SHADOWMAP_SIZE,
+    .width = Engine::SHADOWMAP_SIZE,
+    .height = -Engine::SHADOWMAP_SIZE,
+    .minDepth = 0.0f,
+    .maxDepth = 1.0f,
+  };
 
   vkCmdSetViewport(cmd, 0, 1, &vp);
 
-  VkRect2D scissor{.extent = {.width = Engine::SHADOWMAP_SIZE, .height = Engine::SHADOWMAP_SIZE}};
+  VkRect2D scissor{
+    .extent =
+      {
+        .width = Engine::SHADOWMAP_SIZE,
+        .height = Engine::SHADOWMAP_SIZE,
+      },
+  };
 
   vkCmdSetScissor(cmd, 0, 1, &scissor);
 
@@ -1498,9 +1550,15 @@ void Engine::render(uint32_t swapchain_index) {
 
   VkRenderingInfo rendering_info{
     .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-    .renderArea = {.offset = {0, 0},
-                   .extent = {.width = m_context.swapchainDimensions.width,
-                              .height = m_context.swapchainDimensions.height}},
+    .renderArea =
+      {
+        .offset = {0, 0},
+        .extent =
+          {
+            .width = m_context.swapchainDimensions.width,
+            .height = m_context.swapchainDimensions.height,
+          },
+      },
     .layerCount = 1,
     .colorAttachmentCount = 1,
     .pColorAttachments = &color_attachment,
@@ -1512,8 +1570,10 @@ void Engine::render(uint32_t swapchain_index) {
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_context.pipeline);
 
   VkViewport vp{
+    .x = 0.f,
+    .y = static_cast<float>(m_context.swapchainDimensions.height),
     .width = static_cast<float>(m_context.swapchainDimensions.width),
-    .height = static_cast<float>(m_context.swapchainDimensions.height),
+    .height = -static_cast<float>(m_context.swapchainDimensions.height),
     .minDepth = 0.0f,
     .maxDepth = 1.0f,
   };

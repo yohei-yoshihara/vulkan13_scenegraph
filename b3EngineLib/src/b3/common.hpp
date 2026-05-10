@@ -28,10 +28,10 @@
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
-#define LOGI(...) spdlog::info(__VA_ARGS__);
-#define LOGW(...) spdlog::warn(__VA_ARGS__);
-#define LOGE(...) spdlog::error("{}", fmt::format(__VA_ARGS__));
-#define LOGD(...) spdlog::debug(__VA_ARGS__);
+// #define LOGI(...) spdlog::info(__VA_ARGS__);
+// #define LOGW(...) spdlog::warn(__VA_ARGS__);
+// #define LOGE(...) spdlog::error("{}", fmt::format(__VA_ARGS__));
+// #define LOGD(...) spdlog::debug(__VA_ARGS__);
 
 /// @brief Helper macro to test the result of Vulkan calls which can return an
 /// error.

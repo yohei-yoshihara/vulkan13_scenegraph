@@ -35,7 +35,7 @@ Engine::Engine() {
 }
 
 void Engine::initInstance() {
-  LOGI("Initializing Vulkan instance.");
+  SPDLOG_INFO("Initializing Vulkan instance.");
 
   std::vector<const char *> required_instance_extensions{
     VK_KHR_SURFACE_EXTENSION_NAME,
@@ -62,7 +62,7 @@ void Engine::initInstance() {
 }
 
 void Engine::initDevice() {
-  LOGI("Initializing Vulkan device.");
+  SPDLOG_INFO("Initializing Vulkan device.");
 
   VkPhysicalDeviceVulkan13Features features13 = {
     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
@@ -93,7 +93,7 @@ void Engine::initDevice() {
                     .set_surface(m_context.surface)
                     .select();
   if (!phys_ret) {
-    LOGE("failed to select Vulkan Physical Device");
+    SPDLOG_ERROR("failed to select Vulkan Physical Device");
     assert(false);
     return;
   }
@@ -103,14 +103,14 @@ void Engine::initDevice() {
   vkb::DeviceBuilder device_builder{phys_ret.value()};
   auto dev_ret = device_builder.build();
   if (!dev_ret) {
-    LOGE("Failed to create Vulkan device");
+    SPDLOG_ERROR("Failed to create Vulkan device");
     throw std::runtime_error("Failed to create Vulkan device");
   }
   m_context.device = dev_ret.value();
 
   auto graphics_queue_ret = m_context.device.get_queue(vkb::QueueType::graphics);
   if (!graphics_queue_ret) {
-    LOGE("Failed to get graphics queue");
+    SPDLOG_ERROR("Failed to get graphics queue");
     return;
   }
   m_context.graphicsQueueIndex = m_context.device.get_queue_index(vkb::QueueType::graphics).value();
@@ -901,7 +901,7 @@ void Engine::initPerFrame(PerFrame &per_frame) {
                                            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                                            .commandBufferCount = 1};
   VK_CHECK(vkAllocateCommandBuffers(m_context.device, &cmd_buf_info, &per_frame.primary_command_buffer));
-  LOGD("init_per_frame: primary_command_buffer = {:x}", reinterpret_cast<uint64_t>(per_frame.primary_command_buffer));
+  SPDLOG_DEBUG("init_per_frame: primary_command_buffer = {:x}", reinterpret_cast<uint64_t>(per_frame.primary_command_buffer));
 }
 
 void Engine::teardownPerFrame(PerFrame &per_frame) {
@@ -959,7 +959,7 @@ void Engine::initSwapchain() {
   swapchain_builder.set_desired_min_image_count(vkb::SwapchainBuilder::DOUBLE_BUFFERING);
   auto swap_ret = swapchain_builder.set_old_swapchain(m_context.swapchain).build();
   if (!swap_ret) {
-    LOGE("failed to create swapchain");
+    SPDLOG_ERROR("failed to create swapchain");
     return;
   }
   vkb::destroy_swapchain(m_context.swapchain);
@@ -1858,7 +1858,7 @@ void Engine::initColor() {
 
     VK_CHECK(vmaCreateImage(m_context.vmaAllocator, &imageInfo, &allocCreateInfo, &m_context.colorImages[i],
                             &m_context.colorAllocations[i], nullptr));
-    LOGD("context.colorImage = {:x}", reinterpret_cast<uint64_t>(m_context.colorImages[i]));
+    SPDLOG_DEBUG("context.colorImage = {:x}", reinterpret_cast<uint64_t>(m_context.colorImages[i]));
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1874,7 +1874,7 @@ void Engine::initColor() {
     if (vkCreateImageView(m_context.device, &viewInfo, nullptr, &m_context.colorImageViews[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create image view!");
     }
-    LOGD("context.colorImageView = {:x}", reinterpret_cast<uint64_t>(m_context.colorImageViews[i]));
+    SPDLOG_DEBUG("context.colorImageView = {:x}", reinterpret_cast<uint64_t>(m_context.colorImageViews[i]));
   }
 }
 
@@ -1900,7 +1900,7 @@ void Engine::initDepth() {
 
   VK_CHECK(vmaCreateImage(m_context.vmaAllocator, &imageInfo, &allocCreateInfo, &m_context.depthImage,
                           &m_context.depthAllocation, nullptr));
-  LOGD("context.depthImage = {:x}", reinterpret_cast<uint64_t>(m_context.depthImage));
+  SPDLOG_DEBUG("context.depthImage = {:x}", reinterpret_cast<uint64_t>(m_context.depthImage));
 
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1914,7 +1914,7 @@ void Engine::initDepth() {
   viewInfo.subresourceRange.layerCount = 1;
 
   VK_CHECK(vkCreateImageView(m_context.device, &viewInfo, nullptr, &m_context.depthImageView));
-  LOGD("context.depthImageView = {:x}", reinterpret_cast<uint64_t>(m_context.depthImageView));
+  SPDLOG_DEBUG("context.depthImageView = {:x}", reinterpret_cast<uint64_t>(m_context.depthImageView));
 
   // depth imageをDEPTH OPTINALへ遷移させる
   VkImageMemoryBarrier2 barrier{};
@@ -2049,7 +2049,7 @@ void Engine::update() {
 
   if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR) {
     if (!resize(m_context.swapchainDimensions.width, m_context.swapchainDimensions.height)) {
-      LOGI("Resize failed");
+      SPDLOG_INFO("Resize failed");
     }
     res = acquireNextSwapchainImage(&m_context.currentIndex);
   }
@@ -2067,10 +2067,10 @@ void Engine::update() {
 
   if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR) {
     if (!resize(m_context.swapchainDimensions.width, m_context.swapchainDimensions.height)) {
-      LOGI("Resize failed");
+      SPDLOG_INFO("Resize failed");
     }
   } else if (res != VK_SUCCESS) {
-    LOGE("Failed to present swapchain image.");
+    SPDLOG_ERROR("Failed to present swapchain image.");
   }
 }
 
@@ -2118,7 +2118,7 @@ VkCommandBuffer Engine::beginSingleTimeCommands() {
 
   VkCommandBuffer commandBuffer;
   VK_CHECK(vkAllocateCommandBuffers(m_context.device, &allocInfo, &commandBuffer));
-  LOGD("beginSingleTimeCommands: commandBuffer = {:x}", reinterpret_cast<uint64_t>(commandBuffer));
+  SPDLOG_DEBUG("beginSingleTimeCommands: commandBuffer = {:x}", reinterpret_cast<uint64_t>(commandBuffer));
 
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

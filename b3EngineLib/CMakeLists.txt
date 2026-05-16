@@ -28,7 +28,11 @@ if (MSVC)
     target_compile_options(${PROJECT_NAME} PUBLIC /utf-8)
     target_compile_options(${PROJECT_NAME} PUBLIC /W4)
 else()
-    target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-nullability-extension)
+    target_compile_options(${PROJECT_NAME} PUBLIC 
+      -Wall -Wextra -Wpedantic 
+      -Wno-unused-parameter 
+      -Wno-nullability-extension
+      -Wno-missing-designated-field-initializers)
 endif()
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 
@@ -57,7 +61,7 @@ set(SPDLOG_USE_STD_FORMAT ON CACHE BOOL "" FORCE)
 FetchContent_Declare(
   spdlog
   GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.16.0)
+  GIT_TAG v1.17.0)
 FetchContent_MakeAvailable(spdlog)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${spdlog_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
@@ -66,7 +70,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
 FetchContent_Declare(
   glm
   GIT_REPOSITORY https://github.com/g-truc/glm.git
-  GIT_TAG 1.0.2)
+  GIT_TAG 1.0.3)
 FetchContent_MakeAvailable(glm)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${glm_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
@@ -75,7 +79,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
 FetchContent_Declare(
   vk_bootstrap
   GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-  GIT_TAG v1.4.335 
+  GIT_TAG v1.4.350 
 )
 FetchContent_MakeAvailable(vk_bootstrap)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${vk_bootstrap_SOURCE_DIR}/src)
@@ -95,7 +99,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC VulkanMemoryAllocator)
 FetchContent_Declare(
   volk
   GIT_REPOSITORY https://github.com/zeux/volk.git
-  GIT_TAG vulkan-sdk-1.4.335.0 
+  GIT_TAG vulkan-sdk-1.4.350.0 
 )
 FetchContent_MakeAvailable(volk)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${volk_SOURCE_DIR})
@@ -105,7 +109,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC volk::volk)
 FetchContent_Declare(
   stb
   GIT_REPOSITORY https://github.com/nothings/stb.git
-  GIT_TAG f1c79c02822848a9bed4315b12c8c8f3761e1296
+  GIT_TAG 31c1ad37456438565541f4919958214b6e762fb4
 )
 FetchContent_MakeAvailable(stb)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${stb_SOURCE_DIR})
@@ -133,7 +137,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC fastgltf)
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG v1.92.4
+  GIT_TAG v1.92.8
 )
 FetchContent_MakeAvailable(imgui)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${imgui_SOURCE_DIR})
@@ -142,7 +146,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${imgui_SOURCE_DIR})
 FetchContent_Declare(
   miniaudio
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-  GIT_TAG 0.11.24)
+  GIT_TAG 0.11.25)
 FetchContent_MakeAvailable(miniaudio)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${miniaudio_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC miniaudio)

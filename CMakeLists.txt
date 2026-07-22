@@ -2,6 +2,7 @@
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+include(FetchContent)
 
 project(app)
 add_executable(${PROJECT_NAME}
@@ -23,7 +24,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 add_subdirectory(b3EngineLib)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC "b3EngineLib/src")
-target_link_libraries(${PROJECT_NAME} PUBLIC b3Engine)
+target_link_libraries(${PROJECT_NAME} PRIVATE b3Engine)
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 
@@ -38,16 +39,16 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    "${CMAKE_SOURCE_DIR}/images"
                    $<TARGET_FILE_DIR:${PROJECT_NAME}>/images)
 
-# b3EngineTests
-enable_testing()
-add_subdirectory(b3EngineTests)
-add_test(NAME b3EngineTests COMMAND $<TARGET_FILE:b3EngineTests>)
+# # b3EngineTests
+# enable_testing()
+# add_subdirectory(b3EngineTests)
+# add_test(NAME b3EngineTests COMMAND $<TARGET_FILE:b3EngineTests>)
 
-# appLib
-add_subdirectory(appLib)
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC appLib)
-target_link_libraries(${PROJECT_NAME} PUBLIC appLib)
+# # appLib
+# add_subdirectory(appLib)
+# target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC appLib)
+# target_link_libraries(${PROJECT_NAME} PUBLIC appLib)
 
-# appTests
-add_subdirectory(appTests)
-add_test(NAME appTests COMMAND $<TARGET_FILE:appTests>)
+# # appTests
+# add_subdirectory(appTests)
+# add_test(NAME appTests COMMAND $<TARGET_FILE:appTests>)

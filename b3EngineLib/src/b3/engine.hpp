@@ -5,8 +5,8 @@
 
 #include <VkBootstrap.h>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 #include "b3/camera.hpp"
 #include "b3/types.hpp"
@@ -107,7 +107,7 @@ class Engine {
   struct Context {
     // Base resources
     vkb::Instance instance;
-    GLFWwindow *window = nullptr;
+    SDL_Window *window = nullptr;
     vkb::PhysicalDevice physicalDevice;
     vkb::Device device;
     VkQueue queue = VK_NULL_HANDLE;

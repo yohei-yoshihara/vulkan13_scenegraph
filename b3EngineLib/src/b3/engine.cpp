@@ -6,6 +6,8 @@
 #include "b3/node.hpp"
 #include "b3/texture.hpp"
 
+#include <SDL3/SDL_mouse.h>
+
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
@@ -42,12 +44,12 @@ void Engine::initInstance() {
     // VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
   };
 
-  uint32_t glfwExtensionCount = 0;
-  const char **glfwExtensions;
-  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-  std::copy(glfwExtensions, glfwExtensions + glfwExtensionCount, std::back_inserter(required_instance_extensions));
+  uint32_t sdlExtensionCount = 0;
+  auto sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
+  std::copy(sdlExtensions, sdlExtensions + sdlExtensionCount,
+            std::back_inserter(required_instance_extensions));
 
-  vkb::InstanceBuilder builder;
+  vkb::InstanceBuilder builder(vkGetInstanceProcAddr);
   auto inst_ret = builder.set_app_name("Simple Scene Graph V1.3 + Direct Rendering")
                     .set_engine_name("No Engine")
                     .enable_extensions(required_instance_extensions)
@@ -58,7 +60,7 @@ void Engine::initInstance() {
   }
   m_context.instance = inst_ret.value();
 
-  volkLoadInstance(m_context.instance);
+  // volkLoadInstance(m_context.instance);
 }
 
 void Engine::initDevice() {
@@ -1868,8 +1870,8 @@ Engine::~Engine() {
     vkb::destroy_device(m_context.device);
   }
 
-  glfwDestroyWindow(m_context.window);
-  glfwTerminate();
+  SDL_DestroyWindow(m_context.window);
+  SDL_Quit();
 }
 
 VkFormat Engine::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
@@ -2039,22 +2041,24 @@ void Engine::initShadow() {
 }
 
 bool Engine::prepare() {
-  if (volkInitialize() != VK_SUCCESS) {
-    throw std::runtime_error("failed to initialize volk");
-  }
-  if (!glfwInit()) {
+  // if (volkInitialize() != VK_SUCCESS) {
+  //   throw std::runtime_error("failed to initialize volk");
+  // }
+  if (!SDL_Init(SDL_INIT_VIDEO)) {
     throw std::runtime_error("failed to initialize SDL");
   }
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  m_context.window = glfwCreateWindow(m_windowWidth, m_windowHeight, "Scene Graph", nullptr, nullptr);
+  m_context.window =
+      SDL_CreateWindow("b3Engine", m_windowWidth, m_windowHeight,
+                       SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_VULKAN);
   if (m_context.window == nullptr) {
     throw std::runtime_error("failed to create window");
   }
-  glfwSetInputMode(m_context.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  SDL_SetWindowRelativeMouseMode(m_context.window, true);
 
   initInstance();
 
-  if (glfwCreateWindowSurface(m_context.instance, m_context.window, nullptr, &m_context.surface) != VK_SUCCESS) {
+  if (!SDL_Vulkan_CreateSurface(m_context.window, m_context.instance, nullptr,
+                                &m_context.surface)) {
     throw std::runtime_error("failed to create surface");
   }
 
@@ -2085,20 +2089,28 @@ bool Engine::prepare() {
 }
 
 void Engine::mainLoop() {
-  auto start = std::chrono::system_clock::now();
-  while (!glfwWindowShouldClose(m_context.window)) {
-    glfwPollEvents();
-    if (glfwGetKey(m_context.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-      glfwSetWindowShouldClose(m_context.window, GL_TRUE);
+  bool running = true;
+  Uint64 lastTicks = 0;
+  while (running) {
+    Uint64 ticks = SDL_GetTicks();
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      if (event.type == SDL_EVENT_QUIT) {
+        running = false;
+      }
+      if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE) {
+        running = false;
+      }
+      if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+      }
+      m_camera.handleMouseEvent(event);
     }
-    auto end = std::chrono::system_clock::now();
-    float df = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0f;
-    double xpos, ypos;
-    glfwGetCursorPos(m_context.window, &xpos, &ypos);
-    m_camera.handleMouseEvent(m_context.window, xpos, ypos);
-    m_camera.updateCameraMovement(m_context.window, df);
+    if (lastTicks != 0) {
+      float df = static_cast<float>(ticks - lastTicks) / 1000.f;
+      m_camera.updateCameraMovement(df);
+    }
     update();
-    start = end;
+    lastTicks = ticks;
   }
   // 終了する前に、すべての描画完了するまで待機する
   vkDeviceWaitIdle(m_context.device);

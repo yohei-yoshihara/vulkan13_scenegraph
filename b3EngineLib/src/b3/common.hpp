@@ -1,7 +1,7 @@
 ﻿#ifndef __COMMON_HPP__
 #define __COMMON_HPP__
 
-#include <volk.h>
+// #include <volk.h>
 
 #define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
 #include "vk_mem_alloc.h"

@@ -12,46 +12,49 @@ Camera Camera::lookAt(const glm::vec3 &eye, const glm::vec3 &center) {
   return cam;
 }
 
-void Camera::handleMouseEvent(GLFWwindow *window, double x, double y) {
-  if (!m_gotFirstMousePosition) {
-    m_gotFirstMousePosition = true;
-  }
-  float dx = (x - m_lastX) * m_sensitivity;
-  float dy = (y - m_lastY) * m_sensitivity;
+void Camera::handleMouseEvent(const SDL_Event &e) {
+  if (e.type == SDL_EVENT_MOUSE_MOTION) {
+    float dx = e.motion.xrel * m_sensitivity;
+    float dy = e.motion.yrel * m_sensitivity;
 
-  m_yaw += -dx;
-  m_pitch -= dy;
+    m_yaw += -dx;   // 左右
+    m_pitch -= dy; // 上下（マウス上で pitch +）
 
-  if (m_pitch > 89.0f) {
-    m_pitch = 89.0f;
+    // ピッチ制限（上90° 下-90°）
+    if (m_pitch > 89.0f) {
+      m_pitch = 89.0f;
+    }
+    if (m_pitch < -89.0f) {
+      m_pitch = -89.0f;
+    }
   }
-  if (m_pitch < -89.0f) {
-    m_pitch = -89.0f;
-  }
-  m_lastX = x;
-  m_lastY = y;
 }
 
-void Camera::updateCameraMovement(GLFWwindow *window, float dt) {
+void Camera::updateCameraMovement(float dt) {
+  const bool *k = SDL_GetKeyboardState(nullptr);
+
+  // --- 前方ベクトル（Z-Up版） ---
   glm::vec3 front;
   front.x = std::cos(glm::radians(m_yaw)) * std::cos(glm::radians(m_pitch));
   front.y = std::sin(glm::radians(m_yaw)) * std::cos(glm::radians(m_pitch));
   front.z = std::sin(glm::radians(m_pitch));
   front = glm::normalize(front);
 
+  // --- 右方向（Z-Up版）---
   glm::vec3 up(0.0f, 0.0f, 1.0f);
   glm::vec3 right = glm::normalize(glm::cross(front, up));
 
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+  // --- WASD 移動 ---
+  if (k[SDL_SCANCODE_W]) {
     m_position += front * m_speed * dt;
   }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+  if (k[SDL_SCANCODE_S]) {
     m_position -= front * m_speed * dt;
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  if (k[SDL_SCANCODE_A]) {
     m_position -= right * m_speed * dt;
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  if (k[SDL_SCANCODE_D]) {
     m_position += right * m_speed * dt;
   }
 }

@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 4.1)
-include(FetchContent)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+include(FetchContent)
 
 project(b3Engine)
 
@@ -39,22 +39,29 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 # Vulkan
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${Vulkan_INCLUDE_DIR})
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
-
-# glfw
 if(APPLE)
-  enable_language(OBJC)
-endif(APPLE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    # Add MoltenVK framework path
+    set(MOLTENVK_PATH "$ENV{VULKAN_SDK}/lib/MoltenVK.xcframework")
+    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework IOSurface" "-framework Metal" "-framework MetalKit" "-framework Cocoa" "-framework QuartzCore")
+
+    # If using MoltenVK as a framework
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${MOLTENVK_PATH}")
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+endif()
+
+# SDL
+set(SDL_TESTS OFF)
+set(SDL_TEST_LIBRARY OFF)
+set(SDL_SHARED OFF)
+set(SDL_STATIC ON)
 FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG 3.4)
-FetchContent_MakeAvailable(glfw)
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${glfw_SOURCE_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+  sdl
+  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+  GIT_TAG release-3.4.12)
+FetchContent_MakeAvailable(sdl)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${sdl_SOURCE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
 
 # spdlog
 set(SPDLOG_USE_STD_FORMAT ON CACHE BOOL "" FORCE)
@@ -96,14 +103,14 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${vma_SOURCE_DIR}/inclu
 target_link_libraries(${PROJECT_NAME} PUBLIC VulkanMemoryAllocator)
 
 # volk
-FetchContent_Declare(
-  volk
-  GIT_REPOSITORY https://github.com/zeux/volk.git
-  GIT_TAG vulkan-sdk-1.4.350.0 
-)
-FetchContent_MakeAvailable(volk)
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${volk_SOURCE_DIR})
-target_link_libraries(${PROJECT_NAME} PUBLIC volk::volk)
+# FetchContent_Declare(
+#   volk
+#   GIT_REPOSITORY https://github.com/zeux/volk.git
+#   GIT_TAG vulkan-sdk-1.4.350.0 
+# )
+# FetchContent_MakeAvailable(volk)
+# target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${volk_SOURCE_DIR})
+# target_link_libraries(${PROJECT_NAME} PUBLIC volk::volk)
 
 # stb
 FetchContent_Declare(

@@ -2,7 +2,7 @@
 #define __CAMERA_HPP__
 
 #include "common.hpp"
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 
 namespace b3 {
 
@@ -15,14 +15,14 @@ class Camera {
   // マウス感度
   float m_sensitivity = 0.1f;
 
-  bool m_gotFirstMousePosition = false;
-  double m_lastX = 0.0;
-  double m_lastY = 0.0;
+  // bool m_gotFirstMousePosition = false;
+  // double m_lastX = 0.0;
+  // double m_lastY = 0.0;
 
 public:
   static Camera lookAt(const glm::vec3 &eye, const glm::vec3 &center);
-  void handleMouseEvent(GLFWwindow *window, double x, double y);
-  void updateCameraMovement(GLFWwindow *window, float dt);
+  void handleMouseEvent(const SDL_Event &e);
+  void updateCameraMovement(float dt);
   glm::mat4 getCameraView() const;
 
   const glm::vec3 &position() const { return m_position; }
